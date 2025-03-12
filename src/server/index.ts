@@ -8,9 +8,12 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import {v4 as uuidv4} from 'uuid';
+import { matchQueue, startWorkers } from './queue.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+startWorkers(['matchQueue']).catch(console.error);
 
 const appRouter = router({
   match: publicProcedure.input(zfd.formData({
@@ -33,6 +36,8 @@ const appRouter = router({
       stream.write(Buffer.from(await file.arrayBuffer()));
       stream.end();
     }  
+
+    await matchQueue.add('matchQueue', { matchRequestId });
 
     return { success: true, message: 'Files saved successfully! I am running match analyse! Get your analyse later using "matchRequestId".', matchRequestId };
   })
