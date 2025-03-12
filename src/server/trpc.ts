@@ -14,4 +14,4 @@ const t = initTRPC.create({
  * that can be used throughout the router
  */
 export const router = t.router;
-export const publicProcedure = t.procedure;
+export const baseProcedure = t.procedure;

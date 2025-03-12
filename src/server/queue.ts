@@ -1,6 +1,5 @@
 import { Queue, Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
-import fs from 'fs';
 
 // Create a Redis connection
 const connection = new Redis({
