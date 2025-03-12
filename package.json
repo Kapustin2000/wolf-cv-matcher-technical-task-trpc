@@ -14,7 +14,9 @@
     "@trpc/client": "next",
     "@trpc/server": "next",
     "superjson": "^1.12.4",
-    "zod": "^3.24.2"
+    "uuid": "^11.1.0",
+    "zod": "^3.24.2",
+    "zod-form-data": "^2.0.7"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
