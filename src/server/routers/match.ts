@@ -1,6 +1,6 @@
 import { baseProcedure, router } from '../trpc.js';
 import {v4 as uuidv4} from 'uuid';
-import { matchQueue, startWorkers } from '../queue.js';
+import { matchQueue, startWorkers } from '../lib/queue.js';
 import File from '../classes/File.js';
 import { zfd } from 'zod-form-data';
 
