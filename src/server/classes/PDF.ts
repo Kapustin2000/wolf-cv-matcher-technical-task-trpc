@@ -4,7 +4,7 @@ import { getDocument } from 'pdfjs-dist';
 
 export default class PDF {
 
-    protected static filesDir = path.resolve(process.cwd(), "src/server/uploads")
+    protected static filesDir = path.resolve(process.cwd(), "files")
 
     // Method to extract text from PDF file
     static async extractText(filePath: string): Promise<string> {

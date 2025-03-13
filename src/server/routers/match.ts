@@ -16,7 +16,7 @@ export const matchRouter = router({
   
       const matchRequestId = uuidv4();
     
-      for (const [name, file] of Object.entries({ cv: input.vacancyPdf, vacancy: input.cvPdf })) {
+      for (const [name, file] of Object.entries({ vacancy: input.vacancyPdf, cv: input.cvPdf })) {
         await File.upload(file, `${name}.pdf`, matchRequestId)
       } 
   

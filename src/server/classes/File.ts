@@ -3,11 +3,11 @@ import path from 'path';
 
 export default class File {
 
-    protected static filesDir = path.resolve(process.cwd(), "src/server/uploads")
+    protected static filesDir = path.resolve(process.cwd(), "files")
     
     static async upload(file, fileName: string, uploadPath: string): Promise<Boolean> {
 
-        const fullPath = path.join(this.filesDir, uploadPath); // Use `this` to reference the static variable
+        const fullPath = path.join(this.filesDir, uploadPath);
           
         fs.mkdirSync(fullPath, { recursive: true });
 
@@ -16,5 +16,19 @@ export default class File {
         stream.end();
 
         return true;
+    }
+
+    static save(fileName: string, content: string, format: string, savePath: string): string {
+        const fullPath = path.join(this.filesDir, savePath);
+
+        if (!fs.existsSync(fullPath)) {
+            fs.mkdirSync(fullPath, { recursive: true });
+        }
+
+        const filePath = path.join(fullPath, `${fileName}.${format}`);
+
+        fs.writeFileSync(filePath, content, "utf8");
+
+        return filePath;
     }
 }

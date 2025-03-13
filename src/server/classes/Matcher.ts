@@ -1,7 +1,9 @@
 import natural from "natural";
 import stopword from "stopword";
 import nlp from "compromise";
-
+import path from 'path';
+import PDF from '../classes/PDF.js';
+import File from '../classes/File.js';
 export default class Matcher {
 
     protected static tokenizer = new natural.WordTokenizer();
@@ -28,9 +30,7 @@ export default class Matcher {
 
     protected static async analyzeWithAI(
         cleanedCV: string,
-        cleanedJD: string,
-        matchedSkills: string[],
-        missingSkills: string[]
+        cleanedJD: string
     ): Promise<string> {
         const aiPrompt = `
 Preprocessed Job Description:
@@ -39,9 +39,6 @@ ${cleanedJD}
 Preprocessed Candidate CV:
 ${cleanedCV}
 
-Matched Skills: ${matchedSkills.join(", ")}
-Missing Skills: ${missingSkills.join(", ")}
-
 ### Task:
 - Provide a **short summary (under 100 words)** on how well the candidate fits this role.
         `;
@@ -49,7 +46,7 @@ Missing Skills: ${missingSkills.join(", ")}
         const response = await fetch("https://intertest.woolf.engineering/invoke", {
             method: "POST",
             headers: {
-               
+                
             },
             body: JSON.stringify({
                 contents: [
@@ -61,13 +58,17 @@ Missing Skills: ${missingSkills.join(", ")}
             })
         });
 
-        console.log(response);
-
         const data = await response.json();
+
         return data?.candidates?.[0]?.content?.parts?.[0]?.text || "No AI response.";
     }
 
-    static async match(cvText: string, vacancyText: string): Promise<object> {
+    static async match(matchRequestId: string): Promise<object> {
+
+        console.log(matchRequestId);
+        const cvText = await PDF.extractText(path.resolve(process.cwd(), "files", matchRequestId, "cv.pdf"));
+        const vacancyText = await PDF.extractText(path.resolve(process.cwd(), "files", matchRequestId, "vacancy.pdf"));
+        
         const cleanedCV = this.preprocessText(cvText);
         const cleanedJD = this.preprocessText(vacancyText);
 
@@ -76,9 +77,10 @@ Missing Skills: ${missingSkills.join(", ")}
 
         const { matchedSkills, missingSkills } = this.compareSkills(cvSkills, jdSkills);
 
-        // AI Review (only brief analysis)
-        // const briefAIreview = await this.analyzeWithAI(cleanedCV, cleanedJD, matchedSkills, missingSkills);
+        const review = await this.analyzeWithAI(cleanedCV, cleanedJD);
 
-        return { matchedSkills, missingSkills };
+        File.save('match', JSON.stringify({ matchedSkills, missingSkills, review }), 'json', `${matchRequestId}`)
+
+        return { matchedSkills, missingSkills, review };
     }
 }

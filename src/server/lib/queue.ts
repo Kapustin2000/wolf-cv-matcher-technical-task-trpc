@@ -22,10 +22,7 @@ const handlers: Record<string, (job: Job) => Promise<any>> = {
 
       const { matchRequestId } = job.data;
       
-      const cvText = await PDF.extractText(path.resolve(process.cwd(), "src/server/uploads", matchRequestId, "cv.pdf"));
-      const vacancyText = await PDF.extractText(path.resolve(process.cwd(), "src/server/uploads", matchRequestId, "vacancy.pdf"));
-
-      await Matcher.match(cvText, vacancyText)
+      await Matcher.match(matchRequestId)
 
       return { success: true };
   }
