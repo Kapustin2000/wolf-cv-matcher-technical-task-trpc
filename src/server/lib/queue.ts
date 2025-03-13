@@ -1,5 +1,10 @@
 import { Queue, Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+import PDF from '../classes/PDF.js';
+import Matcher from '../classes/Matcher.js';
 
 // Create a Redis connection
 const connection = new Redis({
@@ -13,9 +18,16 @@ export const matchQueue = new Queue('matchQueue', {
 
 const handlers: Record<string, (job: Job) => Promise<any>> = {
   matchQueue: async (job) => {
-    console.info(`Processing job ${job.id} with data:`, job.data);
+      console.info(`Processing job ${job.id} with data:`, job.data);
 
-    return { success: true };
+      const { matchRequestId } = job.data;
+      
+      const cvText = await PDF.extractText(path.resolve(process.cwd(), "src/server/uploads", matchRequestId, "cv.pdf"));
+      const vacancyText = await PDF.extractText(path.resolve(process.cwd(), "src/server/uploads", matchRequestId, "vacancy.pdf"));
+
+      await Matcher.match(cvText, vacancyText)
+
+      return { success: true };
   }
 };
 

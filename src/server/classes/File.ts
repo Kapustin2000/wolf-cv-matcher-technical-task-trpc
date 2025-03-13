@@ -1,10 +1,9 @@
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import path from 'path';
 
 export default class File {
 
-    protected static filesDir = path.dirname(fileURLToPath(import.meta.url));
+    protected static filesDir = path.resolve(process.cwd(), "src/server/uploads")
     
     static async upload(file, fileName: string, uploadPath: string): Promise<Boolean> {
 

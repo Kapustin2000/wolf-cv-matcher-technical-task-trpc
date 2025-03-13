@@ -1,11 +1,10 @@
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import path from 'path';
 import { getDocument } from 'pdfjs-dist';
 
 export default class PDF {
 
-    protected static filesDir = path.dirname(fileURLToPath(import.meta.url));
+    protected static filesDir = path.resolve(process.cwd(), "src/server/uploads")
 
     // Method to extract text from PDF file
     static async extractText(filePath: string): Promise<string> {
