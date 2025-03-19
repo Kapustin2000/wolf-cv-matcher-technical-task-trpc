@@ -1,5 +1,6 @@
 import { initTRPC } from '@trpc/server';
 import { transformer } from '../shared/transformer.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 /**
  * Initialization of tRPC backend
@@ -7,6 +8,11 @@ import { transformer } from '../shared/transformer.js';
  */
 const t = initTRPC.create({
   transformer,
+  errorFormatter(opts) {
+    const { shape, error } = opts;
+    errorHandler.handleError(error);
+    return shape;
+  },
 });
 
 /**

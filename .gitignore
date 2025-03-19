@@ -9,3 +9,5 @@ data
 .DS_store
 local
 files/*
+logs/
+*.log

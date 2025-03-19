@@ -4,6 +4,8 @@ import FileService from '../services/FileService.js';
 import { zfd } from 'zod-form-data';
 import PDFService from '../services/PDFService.js';
 import MatcherService from '../services/MatcherService.js';
+import { Media } from '../types/Media.js';
+import { logger } from '../utils/logger';
 
 export const matchRouter = router({
     upload: baseProcedure.input(zfd.formData({
@@ -16,21 +18,59 @@ export const matchRouter = router({
     })).mutation(async ({ input }) => {
   
       const matchRequestId = uuidv4();
+      let uploadedFiles: Media[] = [];
 
-       // Upload files concurrently
-      const [uploadedCV, uploadedVacancy] = await Promise.all([
-        FileService.upload(input.cvPdf, `cv.pdf`, matchRequestId),
-        FileService.upload(input.vacancyPdf, `vacancy.pdf`, matchRequestId),
-      ]);
+      try {
+        logger.info('Starting match request', { matchRequestId });
 
-      const [cvText, vacancyText] = await Promise.all([
-        PDFService.extractText(uploadedCV.path),
-        PDFService.extractText(uploadedVacancy.path),
-      ]);
+        // Upload files concurrently
+        uploadedFiles = await Promise.all([
+          FileService.upload(input.cvPdf, `cv.pdf`, matchRequestId),
+          FileService.upload(input.vacancyPdf, `vacancy.pdf`, matchRequestId),
+        ]);
 
-      return await MatcherService.match(
-        cvText,
-        vacancyText
-      );
+        const [cvText, vacancyText] = await Promise.all([
+          PDFService.extractText(uploadedFiles[0].path),
+          PDFService.extractText(uploadedFiles[1].path),
+        ]);
+
+        const result = await MatcherService.match(
+          cvText,
+          vacancyText
+        );
+
+        logger.info('Match request completed successfully', { matchRequestId });
+
+        return {
+          success: true,
+          matchRequestId,
+          result
+        };
+      } catch (error) {
+        logger.error('Match request failed', {
+          matchRequestId,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+
+        // Cleanup uploaded files
+        await Promise.all(
+          uploadedFiles.map(file => FileService.cleanup(file.path))
+        );
+
+        throw error;
+      } finally {
+        // Cleanup files regardless of success or failure
+        try {
+          await Promise.all(
+            uploadedFiles.map(file => FileService.cleanup(file.path))
+          );
+          logger.info('Cleanup completed', { matchRequestId });
+        } catch (error) {
+          logger.error('Cleanup failed', {
+            matchRequestId,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
     })
   });
