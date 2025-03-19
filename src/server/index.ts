@@ -3,10 +3,7 @@
  */
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { router } from './trpc.js';
-import { startWorkers } from './lib/queue.js';
 import { matchRouter } from './routers/match.js';
-
-startWorkers(['matchQueue']).catch(console.error);
 
 export const appRouter = router({
   match: matchRouter,

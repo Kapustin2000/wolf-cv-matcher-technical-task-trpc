@@ -13,7 +13,6 @@
   "dependencies": {
     "@trpc/client": "next",
     "@trpc/server": "next",
-    "bullmq": "^5.42.0",
     "compromise": "^14.14.4",
     "natural": "^8.0.1",
     "pdfjs-dist": "^4.10.38",
