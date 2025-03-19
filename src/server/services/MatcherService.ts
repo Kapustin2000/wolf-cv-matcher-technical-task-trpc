@@ -1,6 +1,7 @@
 import natural from "natural";
 import stopword from "stopword";
 import nlp from "compromise";
+import { config } from '../config/index.js';
 
 export default class MatcherService {
 
@@ -41,10 +42,10 @@ ${cleanedCV}
 - Provide a **short summary (under 100 words)** on how well the candidate fits this role.
         `;
 
-        const response = await fetch("https://intertest.woolf.engineering/invoke", {
+        const response = await fetch(config.AI_API_ENDPOINT, {
             method: "POST",
             headers: {
-                Authorization: `${''}`,
+                Authorization: config.AI_API_TOKEN,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
@@ -56,7 +57,7 @@ ${cleanedCV}
                 ]
             })
         });
-
+        
         const data = await response.json();
 
         return data?.candidates?.[0]?.content?.parts?.[0]?.text || "No AI response.";

@@ -4,6 +4,7 @@
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { router } from './trpc.js';
 import { matchRouter } from './routers/match.js';
+import { config } from './config/index.js';
 
 export const appRouter = router({
   match: matchRouter,

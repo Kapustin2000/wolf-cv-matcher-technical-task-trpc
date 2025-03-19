@@ -14,6 +14,7 @@
     "@trpc/client": "next",
     "@trpc/server": "next",
     "compromise": "^14.14.4",
+    "dotenv": "^16.4.7",
     "natural": "^8.0.1",
     "pdfjs-dist": "^4.10.38",
     "stopword": "^3.1.4",
