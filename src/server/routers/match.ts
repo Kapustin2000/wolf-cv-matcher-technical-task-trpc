@@ -4,13 +4,13 @@ import FileService from '../services/FileService.js';
 import { zfd } from 'zod-form-data';
 import PDFService from '../services/PDFService.js';
 import MatcherService from '../services/MatcherService.js';
-import { Media } from '../types/Media.js';
+import { Media } from '../interfaces/Media.js';
 import { logger } from '../utils/logger.js';
 import { TRPCError } from '@trpc/server';
 import { RateLimiterError } from '../services/RateLimiter.js';
 
 export const matchRouter = router({
-    upload: baseProcedure.input(zfd.formData({
+    analyzePdfs: baseProcedure.input(zfd.formData({
       vacancyPdf: zfd.file().refine((file) => file.type === "application/pdf", {
         message: "Only PDF files are allowed",
       }),

@@ -17,4 +17,4 @@ const server = createHTTPServer({
   router: appRouter,
 });
 
-server.listen(3000);
+server.listen(config.PORT);

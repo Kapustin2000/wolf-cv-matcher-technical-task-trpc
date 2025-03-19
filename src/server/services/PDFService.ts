@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { getDocument, PDFDocumentProxy } from 'pdfjs-dist';
-import { PDFProcessingError } from '../utils/errors';
-import { logger } from '../utils/logger';
+import { PDFProcessingError } from '../utils/errors.js';
+import { logger } from '../utils/logger.js';
 
 export default class PDFService {
     private static readonly filesDir = path.resolve(process.cwd(), "files");
