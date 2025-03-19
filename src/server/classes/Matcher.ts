@@ -1,9 +1,7 @@
 import natural from "natural";
 import stopword from "stopword";
 import nlp from "compromise";
-import path from 'path';
-import PDF from '../classes/PDF.js';
-import File from '../classes/File.js';
+
 export default class Matcher {
 
     protected static tokenizer = new natural.WordTokenizer();
@@ -46,7 +44,8 @@ ${cleanedCV}
         const response = await fetch("https://intertest.woolf.engineering/invoke", {
             method: "POST",
             headers: {
-                
+                Authorization: `Bearer ${AUTH_TOKEN}`,
+                "Content-Type": "application/json",
             },
             body: JSON.stringify({
                 contents: [
@@ -58,17 +57,17 @@ ${cleanedCV}
             })
         });
 
+        console.log(response);
+
         const data = await response.json();
+
+        console.log(data);
 
         return data?.candidates?.[0]?.content?.parts?.[0]?.text || "No AI response.";
     }
 
-    static async match(matchRequestId: string): Promise<object> {
-
-        console.log(matchRequestId);
-        const cvText = await PDF.extractText(path.resolve(process.cwd(), "files", matchRequestId, "cv.pdf"));
-        const vacancyText = await PDF.extractText(path.resolve(process.cwd(), "files", matchRequestId, "vacancy.pdf"));
-        
+    static async match(cvText: string, vacancyText: string): Promise<object> {
+              
         const cleanedCV = this.preprocessText(cvText);
         const cleanedJD = this.preprocessText(vacancyText);
 
@@ -78,8 +77,6 @@ ${cleanedCV}
         const { matchedSkills, missingSkills } = this.compareSkills(cvSkills, jdSkills);
 
         const review = await this.analyzeWithAI(cleanedCV, cleanedJD);
-
-        File.save('match', JSON.stringify({ matchedSkills, missingSkills, review }), 'json', `${matchRequestId}`)
 
         return { matchedSkills, missingSkills, review };
     }
