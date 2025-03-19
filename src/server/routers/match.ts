@@ -1,9 +1,9 @@
 import { baseProcedure, router } from '../trpc.js';
 import {v4 as uuidv4} from 'uuid';
-import File from '../classes/File.js';
+import FileService from '../services/FileService.js';
 import { zfd } from 'zod-form-data';
-import PDF from '../classes/PDF.js';
-import Matcher from '../classes/Matcher.js';
+import PDFService from '../services/PDFService.js';
+import MatcherService from '../services/MatcherService.js';
 
 export const matchRouter = router({
     upload: baseProcedure.input(zfd.formData({
@@ -19,16 +19,16 @@ export const matchRouter = router({
 
        // Upload files concurrently
       const [uploadedCV, uploadedVacancy] = await Promise.all([
-          File.upload(input.cvPdf, `cv.pdf`, matchRequestId),
-          File.upload(input.vacancyPdf, `vacancy.pdf`, matchRequestId),
-       ]);
-
-      const [cvText, vacancyText] = await Promise.all([
-          PDF.extractText(uploadedCV.path),
-          PDF.extractText(uploadedVacancy.path),
+        FileService.upload(input.cvPdf, `cv.pdf`, matchRequestId),
+        FileService.upload(input.vacancyPdf, `vacancy.pdf`, matchRequestId),
       ]);
 
-      return await Matcher.match(
+      const [cvText, vacancyText] = await Promise.all([
+        PDFService.extractText(uploadedCV.path),
+        PDFService.extractText(uploadedVacancy.path),
+      ]);
+
+      return await MatcherService.match(
         cvText,
         vacancyText
       );

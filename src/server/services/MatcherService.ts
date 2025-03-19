@@ -2,7 +2,7 @@ import natural from "natural";
 import stopword from "stopword";
 import nlp from "compromise";
 
-export default class Matcher {
+export default class MatcherService {
 
     protected static tokenizer = new natural.WordTokenizer();
 
@@ -44,7 +44,7 @@ ${cleanedCV}
         const response = await fetch("https://intertest.woolf.engineering/invoke", {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${AUTH_TOKEN}`,
+                Authorization: `${''}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
@@ -57,11 +57,7 @@ ${cleanedCV}
             })
         });
 
-        console.log(response);
-
         const data = await response.json();
-
-        console.log(data);
 
         return data?.candidates?.[0]?.content?.parts?.[0]?.text || "No AI response.";
     }
