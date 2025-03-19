@@ -4,7 +4,8 @@ import nlp from "compromise";
 import { config } from '../config/index.js';
 import { AIServiceError, ValidationError, BaseError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
-import { RateLimiter, RateLimiterError } from './RateLimiter';
+import { RateLimiter, RateLimiterError } from './RateLimiter.js';
+import { MatchResult } from "../interfaces/MatchResult.js";
 
 export default class MatcherService {
 
@@ -33,7 +34,7 @@ export default class MatcherService {
         return { matchedSkills, missingSkills };
     }
 
-    static async match(cvText: string, jobDescriptionText: string): Promise<string> {
+    static async match(cvText: string, jobDescriptionText: string): Promise<MatchResult> {
         try {
             logger.info('Starting match analysis');
 
@@ -103,7 +104,7 @@ export default class MatcherService {
     protected static async analyzeWithAI(
         cleanedCV: string,
         cleanedJD: string
-    ): Promise<string> {
+    ): Promise<MatchResult> {
         try {
             // Check rate limit before making the API call
             await this.rateLimiter.checkLimit();
@@ -113,15 +114,24 @@ export default class MatcherService {
             }
 
             const aiPrompt = `
-Preprocessed Job Description:
+Analyze the job description and candidate's CV to provide a structured evaluation.
+
+Job Description:
 ${cleanedJD}
 
-Preprocessed Candidate CV:
+Candidate CV:
 ${cleanedCV}
 
-### Task:
-- Provide a **short summary (under 100 words)** on how well the candidate fits this role.
-            `;
+Provide a structured analysis in the following JSON format:
+{
+    "score": (a number between 0-100 indicating overall match),
+    "strengths": [list of candidate's key strengths relevant to the role],
+    "weaknesses": [list of areas where the candidate lacks required skills/experience],
+    "recommendations": [specific suggestions for improvement]
+}
+
+Ensure the response is a valid JSON object with these exact fields.
+`;
 
             const response = await fetch(process.env.AI_API_ENDPOINT!, {
                 method: "POST",
@@ -156,7 +166,33 @@ ${cleanedCV}
                 throw new AIServiceError('Invalid AI response format');
             }
 
-            return data.candidates[0].content.parts[0].text;
+            try {
+                const rawResponse = data.candidates[0].content.parts[0].text;
+                // Remove markdown code block syntax if present. It was posible to do better with output parser using zod, but lack of time.
+                const jsonString = rawResponse
+                    .replace(/^```json\n/, '') // Remove opening ```json
+                    .replace(/\n```\s*$/, '')  // Remove closing ```
+                    .trim();
+
+                const aiResponse = JSON.parse(jsonString);
+                
+                // Validate the response format
+                if (!this.isValidAIResponse(aiResponse)) {
+                    throw new Error('Invalid response structure');
+                }
+
+                return {
+                    score: Math.min(100, Math.max(0, aiResponse.score)), // Ensure score is between 0-100
+                    strengths: aiResponse.strengths.map(s => s.trim()),
+                    weaknesses: aiResponse.weaknesses.map(w => w.trim()),
+                    recommendations: aiResponse.recommendations.map(r => r.trim())
+                };
+            } catch (parseError) {
+                throw new AIServiceError('Failed to parse AI response', {
+                    originalError: parseError,
+                    aiResponse: data.candidates[0].content.parts[0].text
+                });
+            }
 
         } catch (error) {
             if (error instanceof RateLimiterError) {
@@ -175,5 +211,18 @@ ${cleanedCV}
                 originalError: error
             });
         }
+    }
+
+    private static isValidAIResponse(response: any): response is MatchResult {
+        return (
+            typeof response === 'object' &&
+            typeof response.score === 'number' &&
+            Array.isArray(response.strengths) &&
+            Array.isArray(response.weaknesses) &&
+            Array.isArray(response.recommendations) &&
+            response.strengths.every((s: unknown) => typeof s === 'string') &&
+            response.weaknesses.every((w: unknown) => typeof w === 'string') &&
+            response.recommendations.every((r: unknown) => typeof r === 'string')
+        );
     }
 }

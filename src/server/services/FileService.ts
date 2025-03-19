@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { Media } from '../types/Media.js';
+import { Media } from '../interfaces/Media.js';
 import { FileUploadError, DirectoryError, FileServiceError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 
