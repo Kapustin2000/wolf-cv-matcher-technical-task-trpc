@@ -4,12 +4,14 @@ import nlp from "compromise";
 import { config } from '../config/index.js';
 import { AIServiceError, ValidationError, BaseError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
+import { RateLimiter, RateLimiterError } from './RateLimiter';
 
 export default class MatcherService {
 
     protected static tokenizer = new natural.WordTokenizer();
     private static readonly MAX_TEXT_LENGTH = 50000; // Arbitrary limit
     private static readonly MIN_TEXT_LENGTH = 50;
+    private static rateLimiter = new RateLimiter();
 
     protected static preprocessText(text: string) {    
         const words = this.tokenizer.tokenize(text);
@@ -103,7 +105,10 @@ export default class MatcherService {
         cleanedJD: string
     ): Promise<string> {
         try {
-            if (!config.AI_API_TOKEN) {
+            // Check rate limit before making the API call
+            await this.rateLimiter.checkLimit();
+
+            if (!process.env.AI_API_TOKEN) {
                 throw new AIServiceError('AI API token not configured');
             }
 
@@ -118,10 +123,10 @@ ${cleanedCV}
 - Provide a **short summary (under 100 words)** on how well the candidate fits this role.
             `;
 
-            const response = await fetch(config.AI_API_ENDPOINT, {
+            const response = await fetch(process.env.AI_API_ENDPOINT!, {
                 method: "POST",
                 headers: {
-                    Authorization: config.AI_API_TOKEN,
+                    Authorization: process.env.AI_API_TOKEN,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
@@ -135,6 +140,10 @@ ${cleanedCV}
             });
 
             if (!response.ok) {
+                // Check if it's a rate limit error from the API
+                if (response.status === 429) {
+                    throw new RateLimiterError('AI service rate limit exceeded');
+                }
                 throw new AIServiceError('AI service request failed', {
                     status: response.status,
                     statusText: response.statusText
@@ -150,6 +159,14 @@ ${cleanedCV}
             return data.candidates[0].content.parts[0].text;
 
         } catch (error) {
+            if (error instanceof RateLimiterError) {
+                logger.warn('Rate limit exceeded', {
+                    error: error.message,
+                    status: this.rateLimiter.getCurrentStatus()
+                });
+                throw error;
+            }
+
             if (error instanceof AIServiceError) {
                 throw error;
             }

@@ -2,19 +2,35 @@ import { z } from 'zod';
 import dotenv from 'dotenv';
 
 const configSchema = z.object({
+  // AI Service
   AI_API_ENDPOINT: z.string().url(),
   AI_API_TOKEN: z.string().min(1),
-  UPLOAD_DIR: z.string(),
-  MAX_FILE_SIZE: z.number(),
+
+  // Rate Limiting
+  MAX_REQUESTS_PER_MINUTE: z.number().default(20),
+  MAX_REQUESTS_PER_HOUR: z.number().default(300),
+  MINUTE_IN_MS: z.number().default(60 * 1000),
+  HOUR_IN_MS: z.number().default(60 * 60 * 1000),
+
+  // Server
   PORT: z.number().default(3000),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 
 dotenv.config();
 
 export const config = configSchema.parse({
+  // AI Service
   AI_API_ENDPOINT: process.env.AI_API_ENDPOINT,
   AI_API_TOKEN: process.env.AI_API_TOKEN,
-  UPLOAD_DIR: process.env.UPLOAD_DIR || './files',
-  MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || '5242880'), // 5MB
-  PORT: parseInt(process.env.PORT || '3000'),
+
+  // Rate Limiting
+  MAX_REQUESTS_PER_MINUTE: Number(process.env.MAX_REQUESTS_PER_MINUTE) || 20,
+  MAX_REQUESTS_PER_HOUR: Number(process.env.MAX_REQUESTS_PER_HOUR) || 300,
+  MINUTE_IN_MS: 60 * 1000,
+  HOUR_IN_MS: 60 * 60 * 1000,
+
+  // Server
+  PORT: Number(process.env.PORT) || 3000,
+  NODE_ENV: process.env.NODE_ENV as 'development' | 'production' | 'test',
 }); 

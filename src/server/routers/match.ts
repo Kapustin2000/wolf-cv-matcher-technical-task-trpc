@@ -5,7 +5,9 @@ import { zfd } from 'zod-form-data';
 import PDFService from '../services/PDFService.js';
 import MatcherService from '../services/MatcherService.js';
 import { Media } from '../types/Media.js';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
+import { TRPCError } from '@trpc/server';
+import { RateLimiterError } from '../services/RateLimiter.js';
 
 export const matchRouter = router({
     upload: baseProcedure.input(zfd.formData({
@@ -56,6 +58,14 @@ export const matchRouter = router({
         await Promise.all(
           uploadedFiles.map(file => FileService.cleanup(file.path))
         );
+
+        // Handle rate limit errors specifically
+        if (error instanceof RateLimiterError) {
+          throw new TRPCError({
+            code: 'TOO_MANY_REQUESTS',
+            message: error.message
+          });
+        }
 
         throw error;
       } finally {

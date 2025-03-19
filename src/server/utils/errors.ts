@@ -51,4 +51,10 @@ export class DirectoryError extends FileServiceError {
     constructor(message: string, data?: any) {
         super(`Directory operation failed: ${message}`, data);
     }
+}
+
+export class RateLimitError extends BaseError {
+    constructor(message: string, data?: any) {
+        super(message, 'RATE_LIMIT_ERROR', 429, data);
+    }
 } 
